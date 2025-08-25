@@ -57,9 +57,9 @@ function ConvertFrom-DiceExpression {
                 $currentIndex += $matches[0].Length - $matches[3].Length
             }
             else {
-                Write-Error "Failed to parse expression at position $currentIndex: $remaining"
-                return $null
-            }
+					    Write-Error ("Failed to parse expression at position {0}: {1}" -f $currentIndex, $remaining)
+					    return $null
+					}
         }
         
         return [PSCustomObject]@{
