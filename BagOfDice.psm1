@@ -1,24 +1,22 @@
 [CmdletBinding()]
 param()
 
-Write-Verbose "Initiate script scoped variable `$Random"
-$script:Random = [System.Random]::new()
-$Test = Get-Variable Random -Scope Script | Select-Object -ExpandProperty Value
-Write-Verbose "Success = $(($Test.GetType()| Select-Object -ExpandProperty FullName) -eq 'System.Random')"
+# Import all public functions
+$publicPath = Join-Path $PSScriptRoot "Public"
+$publicFunctions = Get-ChildItem -Path $publicPath -Filter "*.ps1" -ErrorAction Stop
 
-Write-Verbose "Import all public functions"
-$publicFunctions = try {
-                     Get-ChildItem -Path "$PSScriptRoot/Public" -Filter "*.ps1" -ErrorAction Stop
-                     Write-Verbose "Imported $((Get-ChildItem -Path "$PSScriptRoot/Public" -Filter "*.ps1").Count) functions."
-                   } catch {
-                     Write-Error "Unable to import functions. Exiting"
-                     exit 1
-                   }
-Write-Verbose "Processing functions..."
 foreach ($functionFile in $publicFunctions) {
-    Write-verbose "... $($functionFile.FullName)"
-    . $functionFile.FullName
+    try {
+        . $functionFile.FullName
+        Write-Verbose "Imported function from: $($functionFile.Name)"
+    }
+    catch {
+        Write-Error "Failed to import function from $($functionFile.Name): $_"
+    }
 }
+
+# Initialize module-level variables
+$script:Random = [System.Random]::new()
 
 # Export module members
 Export-ModuleMember -Function @(
