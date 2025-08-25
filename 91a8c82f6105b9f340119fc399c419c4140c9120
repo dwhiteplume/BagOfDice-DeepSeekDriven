@@ -1,0 +1,7 @@
+at this point all functions seem to be working when imported through
+individual files and including the $script:Random in the import file.
+there was an issue with one file which DeepSeek could not figure out
+after several prompts some with web access and some with DeepThink.
+i suggested the file split and by doing so found the invalid function.
+an issue still exists at this point so I have added Write-Verbose
+checks including the necessary advanced function features.
