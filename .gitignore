@@ -3,3 +3,5 @@ readme_base64.txt
 manifest.ps1
 test.ps1
 Private/testFunctions.ps1
+ModuleMap.md
+
