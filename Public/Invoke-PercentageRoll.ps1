@@ -1,27 +1,34 @@
 function Invoke-PercentageRoll {
     <#
     .SYNOPSIS
-        Rolls a percentage value using two ten-sided dice.
+        Rolls percentile dice (d%) using two ten-sided dice.
     .DESCRIPTION
-        Simulates a percentage roll (d%) using two ten-sided dice where one represents tens and the other ones.
-        A roll of 00 (0 tens and 0 ones) is interpreted as 100.
+        Simulates rolling physical percentile dice where:
+        - One die represents tens (00, 10, 20, ..., 90)
+        - One die represents ones (0, 1, 2, ..., 9)
+        - A roll of 00 and 0 is interpreted as 100
+        - All other combinations are read as-is (00+1=1, 90+9=99, etc.)
     .EXAMPLE
         Invoke-PercentageRoll
-        Rolls a percentage value between 1 and 100.
+        # Returns a value between 1-100 based on physical dice probabilities
     #>
     [CmdletBinding()]
     [OutputType([int])]
     param()
     
     process {
-        $tensDie = Invoke-DiceRoll -Sides 10
-        $onesDie = Invoke-DiceRoll -Sides 10
+        # Roll two ten-sided dice (0-9)
+        $tensDie = Invoke-DiceRoll -Sides 10  # Returns 1-10, but we need 0-9
+        $onesDie = Invoke-DiceRoll -Sides 10  # Returns 1-10, but we need 0-9
         
-        $tensValue = if ($tensDie -eq 10) { 0 } else { $tensDie }
-        $onesValue = if ($onesDie -eq 10) { 0 } else { $onesDie }
+        # Convert to 0-9 range (typical d10 numbering)
+        $tensValue = $tensDie - 1  # 1→0, 2→1, ..., 10→9
+        $onesValue = $onesDie - 1  # 1→0, 2→1, ..., 10→9
         
+        # Calculate result (tensValue is already 0-9, representing 00-90)
         $result = ($tensValue * 10) + $onesValue
         
+        # 00 + 0 is interpreted as 100
         if ($result -eq 0) {
             return 100
         }
