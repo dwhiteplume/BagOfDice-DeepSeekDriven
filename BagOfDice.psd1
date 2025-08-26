@@ -24,7 +24,7 @@ GUID = 'e9803a25-2720-44b4-8e57-ba3a12e1d6a8'
 Author = 'Darius Whiteplume'
 
 # Company or vendor of this module
-CompanyName = 'Unknown'
+CompanyName = 'Adventures in Nerdliness'
 
 # Copyright statement for this module
 Copyright = '(c) Darius Whiteplume. All rights reserved.'
