@@ -1,0 +1,5 @@
+We need to modify the way the dice expression interpreter
+works. I have not bothered looking hard at it, but the
+results are obviously not what we want. I need to explain
+the nature of a dice expression to DeepSeek in a way it
+understands. This feature branch will address this.
