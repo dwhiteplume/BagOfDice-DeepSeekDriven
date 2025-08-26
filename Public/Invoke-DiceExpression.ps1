@@ -15,13 +15,13 @@ function Invoke-DiceExpression {
         $rollReport = @()
         $currentIndex = 0
         
-        # Parse tokens with more specific pattern matching
+        # Parse tokens with correct pattern matching order
         while ($currentIndex -lt $cleanExpression.Length) {
             $remaining = $cleanExpression.Substring($currentIndex)
             
             Write-Verbose "Processing: '$remaining' at position $currentIndex"
             
-            # 1. First try to match dice patterns (most specific first)
+            # 1. FIRST check for explicit dice patterns (NdS)
             if ($remaining -match '^(\d+)d(\d+)(.*)$') {
                 # Explicit dice count (2d4, 3d6, etc.)
                 $count = [int]$matches[1]
@@ -47,6 +47,7 @@ function Invoke-DiceExpression {
                 $currentIndex += $matches[0].Length - $remainingAfterMatch.Length
                 continue
             }
+            # 2. THEN check for implicit dice patterns (dS)
             elseif ($remaining -match '^d(\d+)(.*)$') {
                 # Implied dice count (d6, d20, etc.) - count=1
                 $sides = [int]$matches[1]
@@ -64,7 +65,7 @@ function Invoke-DiceExpression {
                 $currentIndex += $matches[0].Length - $remainingAfterMatch.Length
                 continue
             }
-            # 2. Then check for modifiers
+            # 3. FINALLY check for modifiers (this must come LAST!)
             elseif ($remaining -match '^([+-])(\d+)(.*)$') {
                 # Signed modifiers (+1, -2, etc.)
                 $sign = $matches[1]
