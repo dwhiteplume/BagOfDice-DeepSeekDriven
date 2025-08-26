@@ -1,0 +1,2 @@
+RegEx parsing issue exists. An expression like
+3d6+1+2d4 parses as 3d6 + 1 + 2 + d4
