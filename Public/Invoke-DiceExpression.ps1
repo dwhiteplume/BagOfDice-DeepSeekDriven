@@ -1,21 +1,4 @@
 function Invoke-DiceExpression {
-    <#
-    .SYNOPSIS
-        Evaluates complex dice expressions and provides detailed roll reporting.
-    .DESCRIPTION
-        Parses and evaluates dice expressions like "3d6+1" or "1d8+2d4-1" with 
-        detailed reporting of individual dice rolls and modifiers.
-    .PARAMETER Expression
-        The dice expression to evaluate (e.g., "3d6+1", "1d8+2d4-1")
-    .EXAMPLE
-        Invoke-DiceExpression -Expression "3d6+1"
-        # Returns: 12
-        # Reports: [4,2,6]+1 = 12
-    .EXAMPLE  
-        Invoke-DiceExpression -Expression "1d8+2d4-1"
-        # Returns: 9
-        # Reports: [7]+[1,3]-1 = 9
-    #>
     [CmdletBinding()]
     [OutputType([int])]
     param(
@@ -24,73 +7,100 @@ function Invoke-DiceExpression {
     )
     
     process {
-        # Clean and tokenize the expression
-        $cleanExpression = $Expression -replace '\s', ''  # Remove whitespace
+        # Clean the expression
+        $cleanExpression = $Expression -replace '\s', ''
         Write-Verbose "Parsing expression: $cleanExpression"
         
-        # Initialize tracking variables
         $total = 0
         $rollReport = @()
         $currentIndex = 0
-        $expressionParts = @()
         
-        # Parse the expression
+        # Parse tokens with more specific pattern matching
         while ($currentIndex -lt $cleanExpression.Length) {
             $remaining = $cleanExpression.Substring($currentIndex)
             
-            # Check for dice roll pattern (NdS or dS)
-            if ($remaining -match '^(\d*)d(\d+)(.*)$') {
-                $count = if ([string]::IsNullOrEmpty($matches[1])) { 1 } else { [int]$matches[1] }
+            Write-Verbose "Processing: '$remaining' at position $currentIndex"
+            
+            # 1. First try to match dice patterns (most specific first)
+            if ($remaining -match '^(\d+)d(\d+)(.*)$') {
+                # Explicit dice count (2d4, 3d6, etc.)
+                $count = [int]$matches[1]
                 $sides = [int]$matches[2]
+                $remainingAfterMatch = $matches[3]
                 
-                # Validate dice parameters
-                if ($count -le 0) {
-                    throw "Invalid dice count: $count. Must be positive integer."
-                }
-                if ($sides -le 1) {
-                    throw "Invalid side count: $sides. Must be at least 2."
-                }
+                Write-Verbose "Found dice: ${count}d${sides}"
+                
+                # Validate
+                if ($count -le 0) { throw "Dice count must be positive: $count" }
+                if ($sides -le 1) { throw "Dice sides must be ≥2: $sides" }
                 
                 # Roll the dice
                 $rolls = @()
-                $diceTotal = 0
-                for ($i = 0; $i -lt $count; $i++) {
+                for ($i = 1; $i -le $count; $i++) {
                     $roll = Invoke-DiceRoll -Sides $sides
                     $rolls += $roll
-                    $diceTotal += $roll
                 }
-                
+                $diceTotal = ($rolls | Measure-Object -Sum).Sum
                 $total += $diceTotal
                 $rollReport += "[$($rolls -join ',')]"
-                $expressionParts += "d$sides"
                 
-                $currentIndex += $matches[0].Length - $matches[3].Length
+                $currentIndex += $matches[0].Length - $remainingAfterMatch.Length
+                continue
             }
-            # Check for modifier pattern (+N or -N)
-            elseif ($remaining -match '^([+-]?\d+)(.*)$') {
-                $modifier = [int]$matches[1]
-                $total += $modifier
+            elseif ($remaining -match '^d(\d+)(.*)$') {
+                # Implied dice count (d6, d20, etc.) - count=1
+                $sides = [int]$matches[1]
+                $remainingAfterMatch = $matches[2]
                 
-                if ($modifier -ge 0) {
-                    $rollReport += "+$modifier"
-                    $expressionParts += "+$modifier"
-                } else {
-                    $rollReport += "$modifier"  # Negative numbers already have -
-                    $expressionParts += "$modifier"
-                }
+                Write-Verbose "Found implied dice: d${sides}"
+                
+                if ($sides -le 1) { throw "Dice sides must be ≥2: $sides" }
+                
+                # Roll the single die
+                $roll = Invoke-DiceRoll -Sides $sides
+                $total += $roll
+                $rollReport += "[$roll]"
+                
+                $currentIndex += $matches[0].Length - $remainingAfterMatch.Length
+                continue
+            }
+            # 2. Then check for modifiers
+            elseif ($remaining -match '^([+-])(\d+)(.*)$') {
+                # Signed modifiers (+1, -2, etc.)
+                $sign = $matches[1]
+                $modifierValue = [int]$matches[2]
+                $remainingAfterMatch = $matches[3]
+                
+                Write-Verbose "Found modifier: ${sign}${modifierValue}"
+                
+                $modifier = if ($sign -eq '+') { $modifierValue } else { -$modifierValue }
+                $total += $modifier
+                $rollReport += "${sign}${modifierValue}"
+                
+                $currentIndex += $matches[0].Length - $remainingAfterMatch.Length
+                continue
+            }
+            elseif ($remaining -match '^(\d+)(.*)$') {
+                # Unsigned positive modifiers (should be rare in dice notation)
+                $modifier = [int]$matches[1]
+                $remainingAfterMatch = $matches[2]
+                
+                Write-Verbose "Found unsigned modifier: ${modifier}"
+                
+                $total += $modifier
+                $rollReport += "+${modifier}"
                 
                 $currentIndex += $matches[1].Length
+                continue
             }
             else {
-                throw "Failed to parse expression at position $currentIndex: '$remaining'"
+                throw ("Failed to parse expression at position {0}: '{1}'" -f $currentIndex, $remaining)
             }
         }
         
-        # Build and display the detailed report
+        # Generate visual report
         $reportString = $rollReport -join ''
         Write-Host "$Expression = $reportString = $total" -ForegroundColor Cyan
-        
-        # Return the final total
         return $total
     }
 }
