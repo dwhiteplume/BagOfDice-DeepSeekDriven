@@ -1,0 +1,24 @@
+BREAKTHROUGH: Module loading issue resolved. Root cause was malformed
+variable reference in error message within ConvertFrom-DiceExpression.ps1
+(line 60: $currentIndex: $remain… instead of $currentIndex: $remaining).
+
+CURRENT STATE: Module now loads successfully via dot-sourcing from any
+directory. All six core functions operational without errors:
+- Get-RandomNumber: Base RNG functionality working
+- Invoke-DiceRoll: Single die rolls working
+- Invoke-MultipleDiceRoll: Multiple dice with individual results
+- Invoke-PercentageRoll: d% rolls with 00=100 handling
+- ConvertFrom-DiceExpression: Parser operational but needs refinement
+- Invoke-DiceExpression: Complex expression evaluation working
+
+NEXT STEPS: Create feature branch for dice expression parser refinement.
+Current parser works but needs improved regex pattern and better error
+handling for edge cases. Focus on supporting complex expressions like:
+"2d4+1d8+2", "3d6-1", and nested operations.
+
+DEV NOTE: Using dot-sourcing during development (. ./bagOfDice.psm1)
+bypasses PSModulePath restrictions. Will switch to standard Import-Module
+for production release after feature branches are completed and tested.
+
+Human developer note: look into that d% roll, it should not be able to roll
+00 and 100.
